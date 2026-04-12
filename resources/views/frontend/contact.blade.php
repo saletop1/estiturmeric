@@ -3,165 +3,541 @@
 
 @push('styles')
 <style>
-.photo-panel {
+/* -- Contact card glow on hover -- */
+.contact-card {
   position: relative;
-  flex-shrink: 0;
   overflow: hidden;
-  clip-path: polygon(12% 0%, 100% 0%, 88% 100%, 0% 100%);
-  margin-left: -20px;
+  transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s, border-color .35s;
 }
-.photo-panel:first-child {
-  clip-path: polygon(0% 0%, 100% 0%, 88% 100%, 0% 100%);
-  margin-left: 0;
+.contact-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,.08), transparent 70%);
+  transition: opacity .4s;
 }
-.photo-panel:last-child {
-  clip-path: polygon(12% 0%, 100% 0%, 100% 100%, 0% 100%);
+.contact-card:hover::before { opacity: 1; }
+.contact-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 50px -15px rgba(201,168,76,.18);
+  border-color: rgba(201,168,76,.35);
 }
-.photo-panel img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-  transition: transform .45s ease;
+
+/* -- Form field -- */
+.form-field {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.10);
+  color: #fff;
+  transition: border-color .25s, box-shadow .25s, background .25s;
 }
-.photo-panel:hover img { transform: scale(1.08); }
-.dot-grid {
-  background-image: radial-gradient(circle, rgba(201,168,76,.5) 1.5px, transparent 1.5px);
-  background-size: 10px 10px;
+.form-field:focus {
+  outline: none;
+  border-color: #c9a84c;
+  box-shadow: 0 0 0 3px rgba(201,168,76,.12);
+  background: rgba(255,255,255,.06);
+}
+.dark .form-field-light {
+  background: rgba(0,0,0,.25);
+  border-color: rgba(255,255,255,.08);
+  color: #e5e7eb;
+}
+.form-field-light {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #1a1410;
+  transition: border-color .25s, box-shadow .25s;
+}
+.form-field-light:focus {
+  outline: none;
+  border-color: #c9a84c;
+  box-shadow: 0 0 0 3px rgba(201,168,76,.12);
+}
+
+/* -- Floating particles -- */
+@keyframes floatParticle {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: .3; }
+  50%      { transform: translate(12px, -18px) scale(1.15); opacity: .6; }
+}
+.float-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(201,168,76,.25);
+  pointer-events: none;
+  animation: floatParticle ease-in-out infinite;
+}
+
+/* -- Map overlay border glow -- */
+.map-wrapper {
+  position: relative;
+}
+.map-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 1.25rem;
+  pointer-events: none;
+  border: 1px solid rgba(201,168,76,.15);
+  opacity: 0;
+  transition: opacity .4s;
+}
+.map-wrapper:hover::after { opacity: 1; }
+
+/* -- Hero product image pan/zoom -- */
+@keyframes heroPanZoom0 {
+  0%   { transform: scale(1.15) translate(0, 0); }
+  100% { transform: scale(1.25) translate(-3%, -2%); }
+}
+@keyframes heroPanZoom1 {
+  0%   { transform: scale(1.10) translate(0, 0); }
+  100% { transform: scale(1.20) translate(3%, -2%); }
+}
+@keyframes heroPanZoom2 {
+  0%   { transform: scale(1.15) translate(0, 0); }
+  100% { transform: scale(1.22) translate(-2%, 3%); }
+}
+@keyframes heroPanZoom3 {
+  0%   { transform: scale(1.10) translate(0, 0); }
+  100% { transform: scale(1.18) translate(2%, 2%); }
 }
 </style>
 @endpush
 
 @section('content')
 
-{{-- ══════════ BANNER — Diagonal Panels ══════════ --}}
-@php $bannerContact = \App\Models\Setting::get('banner_contact'); @endphp
-<div class="relative overflow-hidden" style="background:#1a1410;padding-top:72px;padding-bottom:60px">
+{{-- ══════════ HERO BANNER ══════════ --}}
+@php
+  $bannerContact = \App\Models\Setting::get('banner_contact');
 
-  {{-- Custom banner override jika diupload admin --}}
-  @if($bannerContact)
-  <div class="absolute inset-0 pointer-events-none" style="z-index:0">
-    <img src="{{ asset('storage/'.$bannerContact) }}" alt="" class="w-full h-full object-cover opacity-30">
-  </div>
-  @endif
+  // Ambil 4 gambar produk acak dari database
+  $heroBgProducts = \App\Models\Product::where('is_active', true)
+      ->whereNotNull('image')
+      ->inRandomOrder()
+      ->limit(4)
+      ->get();
 
-  {{-- Dot grid dekorasi --}}
-  <div class="absolute dot-grid pointer-events-none" style="top:80px;left:12px;width:110px;height:110px;z-index:0;opacity:.6"></div>
-  <div class="absolute dot-grid pointer-events-none" style="bottom:12px;right:220px;width:90px;height:90px;z-index:0;opacity:.4"></div>
+  // Fallback jika produk kurang dari 4
+  $fallbackImages = [
+    'https://images.unsplash.com/photo-1615485500834-bc10199bc727?w=800&q=80',
+    'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&q=80',
+    'https://images.unsplash.com/photo-1615485291234-9d694218aeb3?w=800&q=80',
+    'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80',
+  ];
 
-  {{-- Konten --}}
-  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 flex items-end" style="z-index:2;padding-top:2rem;padding-bottom:0;gap:0">
+  $heroImages = [];
+  foreach ($heroBgProducts as $p) {
+      $heroImages[] = asset('storage/' . $p->image);
+  }
+  // Fill remaining slots with fallback
+  $idx = 0;
+  while (count($heroImages) < 4) {
+      $heroImages[] = $fallbackImages[$idx % count($fallbackImages)];
+      $idx++;
+  }
+@endphp
+<section class="relative overflow-hidden pt-[72px]"
+         style="min-height:460px;background:#1a140a">
 
-    {{-- 4 Panel foto diagonal — dari database produk --}}
-    <div class="flex flex-1 min-w-0" style="height:230px">
-      @php
-        // Ambil 4 produk aktif dari database, prioritaskan yang punya gambar
-        $contactPanels = \App\Models\Product::where('is_active', true)
-            ->whereNotNull('image')
-            ->orderBy('sort_order')
-            ->limit(4)
-            ->get();
-
-        // Fallback jika produk di DB belum ada gambar
-        $fallbackPanels = [
-          ['src'=>'https://images.unsplash.com/photo-1615485500834-bc10199bc727?w=600&q=80', 'label'=>'Kunyit Segar'],
-          ['src'=>'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600&q=80',  'label'=>'Kunyit Kering'],
-          ['src'=>'https://images.unsplash.com/photo-1615485291234-9d694218aeb3?w=600&q=80', 'label'=>'Ekstrak'],
-          ['src'=>'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80',  'label'=>'Rempah Alam'],
-        ];
-      @endphp
-
-      @if($contactPanels->count() >= 2)
-        {{-- Gunakan gambar dari database --}}
-        @foreach($contactPanels as $p)
-        <div class="photo-panel" style="width:27%;height:100%">
-          <img src="{{ asset('storage/'.$p->image) }}" alt="{{ $p->name }}">
-          <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,.10) 60%)"></div>
-          <div class="absolute bottom-0 left-0 right-0 px-3 pb-2.5">
-            <span class="text-white font-semibold" style="font-size:.65rem;opacity:.85">{{ $p->name }}</span>
-          </div>
-        </div>
-        @endforeach
-      @else
-        {{-- Fallback gambar default --}}
-        @foreach($fallbackPanels as $p)
-        <div class="photo-panel" style="width:27%;height:100%">
-          <img src="{{ $p['src'] }}" alt="{{ $p['label'] }}">
-          <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,.10) 60%)"></div>
-          <div class="absolute bottom-0 left-0 right-0 px-3 pb-2.5">
-            <span class="text-white font-semibold" style="font-size:.65rem;opacity:.85">{{ $p['label'] }}</span>
-          </div>
-        </div>
-        @endforeach
-      @endif
+  {{-- 4 Product images as background collage --}}
+  <div class="absolute inset-0 pointer-events-none grid grid-cols-2 grid-rows-2" style="z-index:0">
+    @foreach($heroImages as $i => $img)
+    <div class="relative overflow-hidden">
+      <img src="{{ $img }}" alt=""
+           class="w-full h-full object-cover transition-transform duration-[12s] ease-linear"
+           style="transform:scale({{ $i % 2 === 0 ? '1.15' : '1.1' }});
+                  animation: heroPanZoom{{ $i }} {{ 18 + $i * 4 }}s ease-in-out infinite alternate">
+      {{-- Per-image dark overlay --}}
+      <div class="absolute inset-0" style="background:rgba(16,12,6,.72)"></div>
     </div>
+    @endforeach
+  </div>
 
-    {{-- Kanan: Teks + Logo --}}
-    <div class="flex-shrink-0 flex flex-col justify-between items-end pb-4" style="width:260px;height:230px;padding-left:2rem">
+  {{-- Cross overlay — dark lines between the 4 images --}}
+  <div class="absolute inset-y-0 left-1/2 -translate-x-1/2 pointer-events-none" style="width:2px;z-index:1;
+       background:linear-gradient(to bottom,transparent,rgba(201,168,76,.18) 30%,rgba(201,168,76,.18) 70%,transparent)"></div>
+  <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 pointer-events-none" style="height:2px;z-index:1;
+       background:linear-gradient(to right,transparent,rgba(201,168,76,.18) 30%,rgba(201,168,76,.18) 70%,transparent)"></div>
+
+  {{-- Global dark gradient overlay for text readability --}}
+  <div class="absolute inset-0 pointer-events-none" style="z-index:1;
+       background:linear-gradient(135deg,rgba(10,8,4,.82) 0%,rgba(10,8,4,.55) 50%,rgba(10,8,4,.75) 100%)"></div>
+
+  {{-- Decorative glow --}}
+  <div class="absolute pointer-events-none" style="z-index:2;
+       left:-8rem;top:20%;width:500px;height:500px;border-radius:50%;
+       background:radial-gradient(circle,rgba(201,168,76,.12),transparent 65%);filter:blur(40px)"></div>
+  <div class="absolute pointer-events-none" style="z-index:2;
+       right:-5rem;bottom:0;width:400px;height:400px;border-radius:50%;
+       background:radial-gradient(circle,rgba(201,168,76,.08),transparent 65%);filter:blur(30px)"></div>
+
+  {{-- Floating particles --}}
+  <div class="float-particle" style="z-index:3;width:5px;height:5px;left:15%;top:30%;animation-duration:6s"></div>
+  <div class="float-particle" style="z-index:3;width:3px;height:3px;left:75%;top:25%;animation-duration:8s;animation-delay:-2s"></div>
+  <div class="float-particle" style="z-index:3;width:4px;height:4px;left:55%;top:65%;animation-duration:7s;animation-delay:-4s"></div>
+  <div class="float-particle" style="z-index:3;width:3px;height:3px;left:85%;top:55%;animation-duration:9s;animation-delay:-1s"></div>
+  <div class="float-particle" style="z-index:3;width:4px;height:4px;left:25%;top:70%;animation-duration:5s;animation-delay:-3s"></div>
+
+  {{-- Subtle grid pattern --}}
+  <div class="absolute inset-0 pointer-events-none" style="z-index:2;opacity:.03;
+       background-image:linear-gradient(rgba(201,168,76,.5) 1px, transparent 1px),
+                         linear-gradient(90deg, rgba(201,168,76,.5) 1px, transparent 1px);
+       background-size:60px 60px"></div>
+
+  {{-- Content --}}
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 py-20 md:py-28" style="z-index:10">
+    <div class="max-w-2xl">
+
+      {{-- Breadcrumb --}}
+      <div class="flex items-center gap-2 text-xs mb-6" style="color:rgba(255,255,255,.30)">
+        <a href="{{ route('home') }}" class="hover:text-gold transition-colors">
+          <span x-show="lang==='id'">Beranda</span><span x-show="lang==='en'">Home</span>
+        </a>
+        <i class="fas fa-chevron-right" style="font-size:.35rem;opacity:.5"></i>
+        <span style="color:#c9a84c">
+          <span x-show="lang==='id'">Kontak</span><span x-show="lang==='en'">Contact</span>
+        </span>
+      </div>
+
+      {{-- Label --}}
+      <div class="inline-flex items-center gap-2.5 text-xs font-bold uppercase tracking-[.2em] px-4 py-2 rounded-full mb-6"
+           style="background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.30);color:#c9a84c">
+        <span class="w-1.5 h-1.5 rounded-full" style="background:#c9a84c;box-shadow:0 0 6px #c9a84c"></span>
+        <span x-show="lang==='id'">Hubungi Kami</span>
+        <span x-show="lang==='en'">Get in Touch</span>
+      </div>
 
       {{-- Heading --}}
-      <div class="text-right">
-        <div class="text-xs font-bold uppercase tracking-[.22em] mb-1" style="color:#c9a84c">PT. Diyani Rempah Saketi</div>
-        <div class="font-display font-black text-white leading-none" style="font-size:2.2rem">KONTAK</div>
-        <div class="inline-block mt-1 px-3 py-0.5" style="background:#c9a84c">
-          <span class="font-black text-white uppercase tracking-wider" style="font-size:1.35rem">KAMI</span>
-        </div>
-        <p class="font-display italic mt-1.5" style="font-size:1rem;color:rgba(255,255,255,.70)">Hubungi & Bekerjasama</p>
-      </div>
+      <h1 class="font-display font-bold leading-[1.08] mb-5"
+          style="font-size:clamp(2.5rem,5.5vw,4.2rem);color:#fff;text-shadow:0 2px 24px rgba(0,0,0,.4)">
+        <span x-show="lang==='id'">Mari <em class="not-italic" style="color:#c9a84c">Terhubung</em><br>
+        & Bermitra Bersama</span>
+        <span x-show="lang==='en'">Let's <em class="not-italic" style="color:#c9a84c">Connect</em><br>
+        & Partner Together</span>
+      </h1>
 
-      {{-- Logo --}}
-      <img src="{{ asset('images/diyani.png') }}" alt="Logo Diyani"
-           class="w-20 h-20 object-contain drop-shadow-xl"
-           onerror="this.style.display='none'">
-    </div>
-  </div>
+      <p class="text-base leading-[1.8] max-w-md mb-8" style="color:rgba(255,255,255,.52)">
+        <span x-show="lang==='id'">Kami siap menjawab pertanyaan Anda tentang produk, spesifikasi, harga, dan peluang kerja sama ekspor.</span>
+        <span x-show="lang==='en'">We're ready to answer your questions about products, specifications, pricing, and export partnership opportunities.</span>
+      </p>
 
-  {{-- Wave SVG pemisah — di luar konten agar tidak menutupi --}}
-  <svg class="absolute inset-x-0 bottom-0 pointer-events-none" style="z-index:3"
-       viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M0,30 C240,60 480,0 720,30 C960,60 1200,0 1440,30 L1440,60 L0,60 Z"
-          fill="rgba(26,20,10,.55)"/>
-    <path d="M0,42 C240,70 480,14 720,42 C960,70 1200,14 1440,42 L1440,60 L0,60 Z"
-          fill="#ffffff"/>
-  </svg>
-</div>
-
-{{-- ══════════ INFO + MAP ══════════ --}}
-<section class="bg-white" style="padding-top:1rem;padding-bottom:5rem">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 grid md:grid-cols-5 gap-12">
-
-    {{-- Info --}}
-    <div class="md:col-span-2 reveal">
-      <h2 class="font-display text-2xl font-bold text-ink mb-6">Informasi Kontak</h2>
-      <div class="space-y-5">
+      {{-- Quick stats --}}
+      <div class="flex flex-wrap gap-6">
         @foreach([
-          ['icon'=>'fas fa-location-dot','label'=>'Alamat Kantor',     'val'=>'Tegalsari Barat II/30, Kota Semarang, Jawa Tengah, Indonesia 50251'],
-          ['icon'=>'fab fa-whatsapp',    'label'=>'WhatsApp / Telepon','val'=>'+62 821-3828-0770 | +62 812-9059-7467'],
-          ['icon'=>'fas fa-envelope',    'label'=>'Email',             'val'=>'rempahjowoje25@gmail.com'],
-        ] as $c)
-        <div class="flex gap-4">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-               style="background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.25)">
-            <i class="{{ $c['icon'] }} text-sm" style="color:#c9a84c"></i>
+          ['icon'=>'fas fa-clock','id'=>'Respon < 24 Jam','en'=>'Response < 24 Hours'],
+          ['icon'=>'fas fa-globe','id'=>'7+ Negara Dilayani','en'=>'7+ Countries Served'],
+          ['icon'=>'fas fa-file-certificate','id'=>'COA Tersedia','en'=>'COA Available'],
+        ] as $q)
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.22)">
+            <i class="{{ $q['icon'] }}" style="color:#c9a84c;font-size:.65rem"></i>
           </div>
-          <div>
-            <div class="text-xs text-slate-400 uppercase tracking-wide font-medium mb-0.5">{{ $c['label'] }}</div>
-            <div class="text-sm text-ink font-medium">{{ $c['val'] }}</div>
-          </div>
+          <span class="text-xs font-medium" style="color:rgba(255,255,255,.55)">
+            <span x-show="lang==='id'">{{ $q['id'] }}</span>
+            <span x-show="lang==='en'">{{ $q['en'] }}</span>
+          </span>
         </div>
         @endforeach
       </div>
-      <div class="mt-8">
-        <a href="https://wa.me/6282138280770" target="_blank"
-           class="btn-gold inline-flex items-center gap-2 text-white font-semibold px-6 py-3 rounded-full text-sm w-full justify-center">
-          <i class="fab fa-whatsapp text-lg"></i> Chat via WhatsApp
+    </div>
+  </div>
+
+  {{-- Bottom gold line --}}
+  <div class="absolute bottom-0 inset-x-0 h-px" style="z-index:10;
+       background:linear-gradient(to right,transparent,rgba(201,168,76,.45),transparent)"></div>
+</section>
+
+{{-- ══════════ CONTACT CARDS ══════════ --}}
+<section class="bg-white dark:bg-dark transition-colors duration-300">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 -mt-12 relative z-20">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      @foreach([
+        ['icon'=>'fas fa-location-dot','color'=>'#c9a84c',
+         'id_label'=>'Alamat Kantor','en_label'=>'Office Address',
+         'val'=>'Tegalsari Barat II/30, Semarang, Jawa Tengah 50251',
+         'link'=>null],
+        ['icon'=>'fab fa-whatsapp','color'=>'#25d366',
+         'id_label'=>'WhatsApp','en_label'=>'WhatsApp',
+         'val'=>'+62 821-3828-0770',
+         'link'=>'https://wa.me/6282138280770'],
+        ['icon'=>'fas fa-phone','color'=>'#3b82f6',
+         'id_label'=>'Telepon','en_label'=>'Phone',
+         'val'=>'+62 812-9059-7467',
+         'link'=>'tel:+6281290597467'],
+        ['icon'=>'fas fa-envelope','color'=>'#ef4444',
+         'id_label'=>'Email','en_label'=>'Email',
+         'val'=>'rempahjowoje25@gmail.com',
+         'link'=>'mailto:rempahjowoje25@gmail.com'],
+      ] as $i => $c)
+      <div class="contact-card bg-white dark:bg-dark-card rounded-2xl p-5 border border-slate-100 dark:border-dark-border shadow-lg shadow-black/5 reveal transition-colors duration-300"
+           style="transition-delay:{{ $i * 80 }}ms">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+             style="background:{{ $c['color'] }}12;border:1px solid {{ $c['color'] }}30">
+          <i class="{{ $c['icon'] }}" style="color:{{ $c['color'] }};font-size:.85rem"></i>
+        </div>
+        <div class="text-[.65rem] uppercase tracking-[.14em] font-semibold text-slate-400 dark:text-gray-500 mb-1.5">
+          <span x-show="lang==='id'">{{ $c['id_label'] }}</span>
+          <span x-show="lang==='en'">{{ $c['en_label'] }}</span>
+        </div>
+        @if($c['link'])
+        <a href="{{ $c['link'] }}" target="{{ str_starts_with($c['link'], 'http') ? '_blank' : '_self' }}"
+           class="text-sm font-semibold text-ink dark:text-white hover:text-gold transition-colors break-all leading-snug">
+          {{ $c['val'] }}
         </a>
+        @else
+        <p class="text-sm font-medium text-ink dark:text-gray-200 leading-snug transition-colors">{{ $c['val'] }}</p>
+        @endif
+      </div>
+      @endforeach
+    </div>
+  </div>
+</section>
+
+{{-- ══════════ MAP + FORM SECTION ══════════ --}}
+<section class="py-20 bg-white dark:bg-dark transition-colors duration-300">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+
+    <div class="grid lg:grid-cols-5 gap-10 items-start">
+
+      {{-- LEFT — Map + Business Hours --}}
+      <div class="lg:col-span-3 space-y-6">
+
+        {{-- Map --}}
+        <div class="reveal">
+          <div class="flex items-center gap-2 text-gold text-xs font-bold uppercase tracking-[.18em] mb-4">
+            <span class="w-4 h-px bg-gold"></span>
+            <span x-show="lang==='id'">Lokasi Kami</span>
+            <span x-show="lang==='en'">Our Location</span>
+          </div>
+          <div class="map-wrapper rounded-2xl overflow-hidden shadow-lg">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3960.395!2d110.4089!3d-6.9932!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sTegalsari+Barat+Semarang!5e0!3m2!1sid!2sid!4v1"
+              width="100%" height="340" style="border:0;display:block" allowfullscreen="" loading="lazy"
+              class="rounded-2xl"></iframe>
+          </div>
+        </div>
+
+        {{-- Business Hours --}}
+        <div class="reveal" style="transition-delay:.1s">
+          <div class="bg-slate-50 dark:bg-dark-card rounded-2xl p-6 border border-slate-100 dark:border-dark-border transition-colors duration-300">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center"
+                   style="background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.22)">
+                <i class="fas fa-clock text-gold text-sm"></i>
+              </div>
+              <div>
+                <h3 class="font-semibold text-ink dark:text-white transition-colors">
+                  <span x-show="lang==='id'">Jam Operasional</span>
+                  <span x-show="lang==='en'">Business Hours</span>
+                </h3>
+                <p class="text-xs text-slate-400 dark:text-gray-500">
+                  <span x-show="lang==='id'">Waktu Indonesia Barat (WIB)</span>
+                  <span x-show="lang==='en'">Western Indonesia Time (WIB)</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              @foreach([
+                ['id_day'=>'Senin - Jumat','en_day'=>'Monday - Friday','time'=>'08:00 - 17:00','active'=>true],
+                ['id_day'=>'Sabtu','en_day'=>'Saturday','time'=>'08:00 - 12:00','active'=>true],
+                ['id_day'=>'Minggu & Hari Libur','en_day'=>'Sunday & Holidays','id_time'=>'Tutup','en_time'=>'Closed','active'=>false],
+              ] as $h)
+              <div class="flex items-center justify-between py-2.5 px-3 rounded-lg {{ $h['active'] ? 'bg-white dark:bg-dark-surface' : 'bg-red-50/50 dark:bg-red-900/10' }} transition-colors duration-300">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-2 h-2 rounded-full {{ $h['active'] ? 'bg-emerald-400' : 'bg-red-400' }}"></span>
+                  <span class="text-sm text-slate-700 dark:text-gray-300 font-medium transition-colors">
+                    <span x-show="lang==='id'">{{ $h['id_day'] }}</span>
+                    <span x-show="lang==='en'">{{ $h['en_day'] }}</span>
+                  </span>
+                </div>
+                <span class="text-sm font-semibold {{ $h['active'] ? 'text-ink dark:text-white' : 'text-red-500 dark:text-red-400' }} transition-colors">
+                  @if(isset($h['id_time']))
+                    <span x-show="lang==='id'">{{ $h['id_time'] }}</span>
+                    <span x-show="lang==='en'">{{ $h['en_time'] }}</span>
+                  @else
+                    {{ $h['time'] }}
+                  @endif
+                </span>
+              </div>
+              @endforeach
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-200 dark:border-dark-border flex items-start gap-2.5">
+              <i class="fas fa-info-circle text-gold text-xs mt-0.5"></i>
+              <p class="text-xs text-slate-400 dark:text-gray-500 leading-relaxed">
+                <span x-show="lang==='id'">WhatsApp tetap bisa dihubungi di luar jam kerja. Respons akan diberikan pada hari kerja berikutnya.</span>
+                <span x-show="lang==='en'">WhatsApp is still reachable outside business hours. Responses will be provided on the next business day.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {{-- RIGHT — Contact Form --}}
+      <div class="lg:col-span-2 reveal" style="transition-delay:.15s">
+        <div class="bg-slate-50 dark:bg-dark-card rounded-2xl p-7 border border-slate-100 dark:border-dark-border shadow-sm transition-colors duration-300 sticky top-28">
+
+          <div class="mb-6">
+            <h3 class="font-display text-2xl font-bold text-ink dark:text-white transition-colors mb-1.5">
+              <span x-show="lang==='id'">Kirim Pesan</span>
+              <span x-show="lang==='en'">Send a Message</span>
+            </h3>
+            <p class="text-xs text-slate-400 dark:text-gray-500">
+              <span x-show="lang==='id'">Isi formulir di bawah dan tim kami akan segera menghubungi Anda.</span>
+              <span x-show="lang==='en'">Fill out the form below and our team will contact you shortly.</span>
+            </p>
+          </div>
+
+          <form action="https://wa.me/6282138280770" method="get" target="_blank"
+                x-data="{ name: '', company: '', msg: '' }"
+                @submit.prevent="
+                  let text = `Halo PT. Diyani Rempah Saketi,%0A%0ANama: ${name}%0APerusahaan: ${company}%0A%0A${msg}`;
+                  window.open(`https://wa.me/6282138280770?text=${text}`, '_blank');
+                ">
+            <div class="space-y-4">
+
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-1.5">
+                  <span x-show="lang==='id'">Nama Lengkap *</span>
+                  <span x-show="lang==='en'">Full Name *</span>
+                </label>
+                <input type="text" x-model="name" required
+                       class="form-field-light dark:form-field-light w-full rounded-xl px-4 py-3 text-sm"
+                       :placeholder="lang==='id' ? 'Nama Anda' : 'Your Name'">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-1.5">
+                  <span x-show="lang==='id'">Perusahaan</span>
+                  <span x-show="lang==='en'">Company</span>
+                </label>
+                <input type="text" x-model="company"
+                       class="form-field-light dark:form-field-light w-full rounded-xl px-4 py-3 text-sm"
+                       :placeholder="lang==='id' ? 'Nama Perusahaan' : 'Company Name'">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-1.5">
+                  <span x-show="lang==='id'">Pesan *</span>
+                  <span x-show="lang==='en'">Message *</span>
+                </label>
+                <textarea x-model="msg" rows="4" required
+                          class="form-field-light dark:form-field-light w-full rounded-xl px-4 py-3 text-sm resize-none"
+                          :placeholder="lang==='id' ? 'Tulis pesan atau pertanyaan Anda...' : 'Write your message or question...'"></textarea>
+              </div>
+
+              <button type="submit"
+                      class="w-full py-3.5 rounded-xl text-white text-sm font-bold uppercase tracking-wider
+                             inline-flex items-center justify-center gap-2.5
+                             transition-all hover:-translate-y-0.5"
+                      style="background:linear-gradient(135deg,#c9a84c,#9e7c2a);box-shadow:0 4px 20px rgba(201,168,76,.25)">
+                <i class="fab fa-whatsapp text-base"></i>
+                <span x-show="lang==='id'">Kirim via WhatsApp</span>
+                <span x-show="lang==='en'">Send via WhatsApp</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="mt-5 pt-5 border-t border-slate-200 dark:border-dark-border">
+            <p class="text-xs text-slate-400 dark:text-gray-500 text-center flex items-center justify-center gap-1.5">
+              <i class="fas fa-shield-halved text-gold"></i>
+              <span x-show="lang==='id'">Pesan dikirim langsung ke WhatsApp kami. Data Anda aman.</span>
+              <span x-show="lang==='en'">Message sent directly to our WhatsApp. Your data is safe.</span>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
+  </div>
+</section>
 
-    {{-- Map --}}
-    <div class="md:col-span-3 reveal" style="transition-delay:.15s">
-      <div class="rounded-2xl overflow-hidden h-80 bg-slate-100 border border-slate-200">
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3960.395!2d110.4089!3d-6.9932!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sTegalsari+Barat+Semarang!5e0!3m2!1sid!2sid!4v1"
-          width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+{{-- ══════════ CTA — WHY PARTNER ══════════ --}}
+<section class="py-20 transition-colors duration-300" style="background:linear-gradient(135deg,#1a140a,#2a1f12)">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6">
+
+    <div class="text-center mb-14 reveal">
+      <div class="flex items-center justify-center gap-2 text-gold text-xs font-bold uppercase tracking-[.18em] mb-3">
+        <span class="w-4 h-px bg-gold"></span>
+        <span x-show="lang==='id'">Mengapa Bermitra</span>
+        <span x-show="lang==='en'">Why Partner With Us</span>
+        <span class="w-4 h-px bg-gold"></span>
+      </div>
+      <h2 class="font-display text-3xl md:text-4xl font-bold text-white mb-3">
+        <span x-show="lang==='id'">Keuntungan <em class="not-italic text-gold">Bermitra</em> Bersama Kami</span>
+        <span x-show="lang==='en'">Benefits of <em class="not-italic text-gold">Partnering</em> With Us</span>
+      </h2>
+      <p class="text-sm max-w-lg mx-auto" style="color:rgba(255,255,255,.42)">
+        <span x-show="lang==='id'">Kami memastikan setiap mitra mendapatkan layanan dan produk terbaik.</span>
+        <span x-show="lang==='en'">We ensure every partner receives the best service and products.</span>
+      </p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      @foreach([
+        ['icon'=>'fas fa-file-certificate',
+         'id_title'=>'Dokumen Ekspor Lengkap','en_title'=>'Complete Export Documents',
+         'id_desc'=>'NIB, AHU, COA, dan semua dokumen yang dibutuhkan untuk bea cukai internasional.',
+         'en_desc'=>'NIB, AHU, COA, and all documents needed for international customs.'],
+        ['icon'=>'fas fa-flask',
+         'id_title'=>'Uji Lab Setiap Batch','en_title'=>'Lab Tested Every Batch',
+         'id_desc'=>'Certificate of Analysis dari SIG Laboratory untuk setiap pengiriman.',
+         'en_desc'=>'Certificate of Analysis from SIG Laboratory for every shipment.'],
+        ['icon'=>'fas fa-tags',
+         'id_title'=>'Harga Kompetitif','en_title'=>'Competitive Pricing',
+         'id_desc'=>'Langsung dari produsen — tanpa perantara, harga terbaik untuk kualitas premium.',
+         'en_desc'=>'Direct from producer — no middlemen, best prices for premium quality.'],
+        ['icon'=>'fas fa-truck-fast',
+         'id_title'=>'Pengiriman Tepat Waktu','en_title'=>'On-Time Delivery',
+         'id_desc'=>'Jaringan logistik terkelola untuk memastikan pengiriman sesuai jadwal.',
+         'en_desc'=>'Managed logistics network to ensure delivery on schedule.'],
+        ['icon'=>'fas fa-headset',
+         'id_title'=>'Dukungan Dedikasi','en_title'=>'Dedicated Support',
+         'id_desc'=>'Tim khusus siap melayani kebutuhan Anda dari inquiry hingga after-sales.',
+         'en_desc'=>'Dedicated team ready to serve your needs from inquiry to after-sales.'],
+        ['icon'=>'fas fa-handshake',
+         'id_title'=>'Kemitraan Jangka Panjang','en_title'=>'Long-Term Partnership',
+         'id_desc'=>'Kami membangun hubungan bisnis yang berkelanjutan, bukan transaksi satu kali.',
+         'en_desc'=>'We build sustainable business relationships, not one-time transactions.'],
+      ] as $i => $b)
+      <div class="group rounded-2xl p-5 reveal transition-all duration-300 cursor-default hover:-translate-y-1"
+           style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);transition-delay:{{ $i * 60 }}ms"
+           onmouseover="this.style.background='rgba(201,168,76,.06)';this.style.borderColor='rgba(201,168,76,.20)'"
+           onmouseout="this.style.background='rgba(255,255,255,.03)';this.style.borderColor='rgba(255,255,255,.06)'">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+             style="background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.22)">
+          <i class="{{ $b['icon'] }} text-gold text-sm"></i>
+        </div>
+        <h4 class="font-semibold text-white text-sm mb-1.5">
+          <span x-show="lang==='id'">{{ $b['id_title'] }}</span>
+          <span x-show="lang==='en'">{{ $b['en_title'] }}</span>
+        </h4>
+        <p class="text-xs leading-relaxed" style="color:rgba(255,255,255,.40)">
+          <span x-show="lang==='id'">{{ $b['id_desc'] }}</span>
+          <span x-show="lang==='en'">{{ $b['en_desc'] }}</span>
+        </p>
+      </div>
+      @endforeach
+    </div>
+
+    {{-- Bottom CTA --}}
+    <div class="text-center mt-14 reveal">
+      <div class="inline-flex flex-col sm:flex-row items-center gap-4">
+        @php $wa = \App\Models\Setting::get('wa_number', '6282138280770'); @endphp
+        <a href="https://wa.me/{{ $wa }}" target="_blank"
+           class="btn-gold font-semibold text-sm px-8 py-4 rounded-full inline-flex items-center gap-2.5">
+          <i class="fab fa-whatsapp text-lg"></i>
+          <span x-show="lang==='id'">Mulai Konsultasi Gratis</span>
+          <span x-show="lang==='en'">Start Free Consultation</span>
+        </a>
+        <a href="{{ route('products') }}"
+           class="inline-flex items-center gap-2 text-sm font-medium transition-colors"
+           style="color:rgba(255,255,255,.45)"
+           onmouseover="this.style.color='#c9a84c'" onmouseout="this.style.color='rgba(255,255,255,.45)'">
+          <span x-show="lang==='id'">Lihat Produk Kami</span>
+          <span x-show="lang==='en'">View Our Products</span>
+          <i class="fas fa-arrow-right text-xs"></i>
+        </a>
       </div>
     </div>
   </div>
