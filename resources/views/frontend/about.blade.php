@@ -135,10 +135,11 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-16 items-center">
 
     <div class="relative reveal">
-      <div class="rounded-[1.5rem] overflow-hidden shadow-2xl aspect-[4/5]">
-        <img src="https://images.unsplash.com/photo-1615485500834-bc10199bc727?w=800&q=80&auto=format&fit=crop"
+      <div class="aspect-[4/5]">
+        <img src="/images/estin.jpeg"
              alt="Kunyit Diyani"
-             class="w-full h-full object-cover hover:scale-105 transition-transform duration-700">
+             class="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-700"
+             style="-webkit-mask-image: radial-gradient(ellipse 80% 85% at 50% 40%, black 50%, transparent 100%); mask-image: radial-gradient(ellipse 80% 85% at 50% 40%, black 50%, transparent 100%);">
       </div>
       <div class="absolute -left-4 top-8 bg-white dark:bg-dark-card rounded-2xl px-4 py-3 shadow-xl z-10 card-lift transition-colors duration-300"
            style="border:1px solid #f1ece0">

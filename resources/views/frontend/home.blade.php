@@ -126,29 +126,7 @@
 
 {{-- ======== ABOUT ======== --}}
 <section class="py-24 bg-white dark:bg-dark transition-colors duration-300">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-16 items-center">
-
-    {{-- Image stack --}}
-    <div class="relative reveal">
-      <div class="rounded-2xl overflow-hidden aspect-[4/5]">
-        <img src="https://images.unsplash.com/photo-1615485500834-bc10199bc727?w=800&q=80&auto=format&fit=crop"
-             alt="Kunyit Diyani" class="w-full h-full object-cover">
-      </div>
-      <div class="absolute -right-5 -bottom-5 bg-gold rounded-2xl p-4 shadow-2xl float-anim z-10">
-        <div class="font-display text-3xl font-bold text-white leading-tight">2025</div>
-        <div class="text-xs uppercase tracking-wider mt-0.5" style="color:rgba(255,255,255,.75)">
-          <span x-show="lang==='id'">Didirikan</span>
-          <span x-show="lang==='en'">Founded</span>
-        </div>
-      </div>
-      <div class="absolute -left-4 top-8 bg-white dark:bg-dark-card rounded-xl px-4 py-2.5 shadow-xl border border-slate-100 dark:border-dark-border z-10 transition-colors duration-300">
-        <div class="flex items-center gap-1.5">
-          <i class="fas fa-star text-gold text-xs"></i>
-          <span class="text-xs font-semibold text-slate-700 dark:text-gray-300">Lab Certified</span>
-        </div>
-        <div class="text-[.6rem] text-slate-400 dark:text-gray-500 mt-0.5">SIG.MARK.E.XII.2025</div>
-      </div>
-    </div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
 
     {{-- Copy --}}
     <div class="reveal" style="transition-delay:.15s">
