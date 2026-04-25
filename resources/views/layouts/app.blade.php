@@ -338,16 +338,6 @@ body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-font-smo
   </div>
 </footer>
 
-{{-- Admin Float Button --}}
-<a href="/admin" id="afb"
-   class="fixed bottom-6 right-6 z-50 w-11 h-11 rounded-full bg-ink/75 hover:bg-gold
-          border border-white/10 hover:border-gold flex items-center justify-center
-          text-white/38 hover:text-white backdrop-blur-sm shadow-lg transition-all duration-200 group">
-  <i class="fas fa-lock text-xs group-hover:scale-110 transition-transform"></i>
-  <span class="absolute right-full mr-2.5 whitespace-nowrap text-xs bg-ink text-white/70
-               px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity
-               pointer-events-none border border-white/10">Admin Login</span>
-</a>
 
 <script>
 // Navbar scroll effect
